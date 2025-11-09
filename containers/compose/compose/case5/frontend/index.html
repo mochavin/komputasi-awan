@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Pastebin</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+            }
+            textarea {
+                width: 100%;
+                height: 100px;
+            }
+            button {
+                margin-top: 10px;
+            }
+            .paste {
+                border: 1px solid #ccc;
+                padding: 10px;
+                margin: 10px 0;
+            }
+            .empty {
+                text-align: center;
+                color: #888;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Pastebin</h1>
+        <textarea id="content" placeholder="Paste di sini..."></textarea>
+        <button id="submit">Submit</button>
+        <div id="pastes"></div>
+
+        <script>
+            const contentInput = document.getElementById("content");
+            const submitBtn = document.getElementById("submit");
+            const pastesDiv = document.getElementById("pastes");
+
+            async function loadPastes() {
+                try {
+                    const response = await fetch("/api/pastes");
+                    const pastes = await response.json();
+                    displayPastes(pastes);
+                } catch (error) {
+                    console.error("Error loading pastes:", error);
+                }
+            }
+
+            function displayPastes(pastes) {
+                if (pastes.length === 0) {
+                    pastesDiv.innerHTML =
+                        '<p class="empty">Belum ada paste. Jadilah yang pertama!</p>';
+                } else {
+                    pastesDiv.innerHTML = pastes
+                        .map(
+                            (p) =>
+                                `<div class="paste"><pre>${p.content}</pre><small>${new Date(p.created_at).toLocaleString()}</small></div>`,
+                        )
+                        .join("");
+                }
+            }
+
+            submitBtn.addEventListener("click", async () => {
+                const content = contentInput.value.trim();
+                if (!content) return;
+                try {
+                    const response = await fetch("/api/pastes", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ content }),
+                    });
+                    if (response.ok) {
+                        contentInput.value = "";
+                        loadPastes();
+                    }
+                } catch (error) {
+                    console.error("Error submitting paste:", error);
+                }
+            });
+
+            loadPastes();
+        </script>
+    </body>
+</html>
